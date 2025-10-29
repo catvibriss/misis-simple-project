@@ -11,7 +11,7 @@ async def user_register(request: Request):
         check_keys = ["username", "email", "password"]
         if check_keys != list(data.keys()):
             raise HTTPException(500, detail="wrong data keys")
-        user = db.tools.Users().register_user(username=data["username"], password=data["password"], email=data["email"])   
+        user = db.tools.Users.register(username=data["username"], password=data["password"], email=data["email"])   
         if isinstance(user, db.structure.User):
             return {"id": user.id}
         # TODO: так называемый "токен" для работы 
@@ -28,7 +28,7 @@ async def user_login(request: Request):
         if "password" not in data_keys:
             raise HTTPException(500, detail="wrong data keys")
         
-        user = db.tools.Users().get_database(username=data.get("username", None), email=data.get("email", None))
+        user = db.tools.Users.get(username=data.get("username", None), email=data.get("email", None))
         check = user.is_password(data["password"])
         
         if check:
