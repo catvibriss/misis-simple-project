@@ -8,13 +8,13 @@ async def user_register(request: Request):
     try:
         data = await request.json()
         data = dict(data)
-        check_keys = ["username", "email", "password"]
-        if check_keys != list(data.keys()):
+        check_keys = {"username", "email", "password"}
+        if check_keys != set(data.keys()):
             raise HTTPException(500, detail="wrong data keys")
-        user = db.tools.Users.register(username=data["username"], password=data["password"], email=data["email"])   
+        user = db.tools.Users().register(username=data["username"], password=data["password"], email=data["email"])   
         if isinstance(user, db.structure.User):
-            return {"id": user.id}
-        # TODO: так называемый "токен" для работы 
+            token = db.tools.Users().get_token(user=user)
+            return {"token": token.string}
         raise HTTPException(500, detail=f"server-side error: {user}")
     except Exception as e:
         raise HTTPException(500, detail=f"server-side error: {e}")
@@ -27,12 +27,11 @@ async def user_login(request: Request):
         data_keys = list(data.keys())
         if "password" not in data_keys:
             raise HTTPException(500, detail="wrong data keys")
-        
-        user = db.tools.Users.get(username=data.get("username", None), email=data.get("email", None))
+        user = db.tools.Users().get(username=data.get("username", None), email=data.get("email", None))
         check = user.is_password(data["password"])
-        
+        token = db.tools.Users().get_token(user=user)
         if check:
-            return {"token": "soon"}
+            return {"token": token.string}
         else:
             raise HTTPException(403, detail="wrong password bro")
         

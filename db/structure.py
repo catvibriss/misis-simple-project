@@ -2,6 +2,7 @@ import sqlalchemy as sql
 import sqlalchemy.orm as orm
 from sqlalchemy.ext.hybrid import hybrid_property
 from datetime import datetime
+from datetime import datetime, timedelta
 from hashlib import sha256
 
 engine = sql.create_engine('sqlite:///database.db')
@@ -45,5 +46,23 @@ class User(Base):
     def is_password(self, password_check: str):
         check_hash = sha256(password_check.encode("utf-8")).hexdigest()
         return check_hash == self._password_hash
+
+import secrets
+
+def generate_hex_token(length: int) -> str:
+    return secrets.token_hex(length // 2)
+
+class Token(Base):
+    __tablename__ = "tokens"
+    
+    id: orm.Mapped[int] = orm.mapped_column(sql.Integer, primary_key=True)
+    
+    string: orm.Mapped[str] = orm.mapped_column(sql.String(32), nullable=False, default=generate_hex_token(32))
+    user_id: orm.Mapped[int] = orm.mapped_column(sql.Integer, nullable=False)
+    
+    created_at: orm.Mapped[datetime] = orm.mapped_column(sql.DateTime(), default=datetime.now)
+    expires_at: orm.Mapped[datetime] = orm.mapped_column(sql.DateTime(), default=lambda: datetime.now() + timedelta(hours=24))
+    
+    is_active: orm.Mapped[bool] = orm.mapped_column(sql.Boolean, nullable=False, default=True)
     
 metadata.create_all(engine)
